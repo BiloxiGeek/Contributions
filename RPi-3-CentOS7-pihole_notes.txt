@@ -1,0 +1,55 @@
+dd if=CentOS-Userland-7-armv7hl-Minimal-1603-RaspberryPi3.img of=/dev/sdd bs=4M status=progress
+
+Pull the SD card adapter, reinsert to get the SD card mounted again
+
+I do a few tweaks on the card before I put it in the RPi3
+- set up /root/.ssh/authorized_keys
+- Copy /etc/ssh/ from the other running SD card so I don't have to fight the known_hosts file (check file permissions are correct on the keys)
+- Copy root entry in the running RPi's /etc/shadow to get the password changed
+- Disable selinux (figure we can fight that battle later)
+- Disable firewalld (just my preference at the moment)
+- Expand the root filesystem in gparted to 10240, takes care of partitioning and resize2fs steps 
+- created another partition just for laughs and chuckles
+- umount everything and move the SD card to the RPi
+
+Boot fresh SD card
+- Install vim (my preference)
+- mkdir -p /export/source
+- Edit /etc/fstab to mount /dev/mmcblk0p4 on /export/source
+- yum install wget
+- cd /export/source
+- wget https://dl.fedoraproject.org/pub/epel/7/SRPMS/l/lighttpd-1.4.39-3.el7.src.rpm
+- wget https://dl.fedoraproject.org/pub/epel/7/SRPMS/s/spawn-fcgi-1.6.3-5.el7.src.rpm
+- yum install rpm-build
+- yum install gcc make
+- mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+- echo '%_topdir %(echo $HOME)/rpmbuild' > ~/.rpmmacros
+- rpm -ivh /export/source/lighttpd-1.4.39-3.el7.src.rpm
+- rpm -ivh /export/source/spawn-fcgi-1.6.3-5.el7.src.rpm
+- cd ~/rpmbuild/SPECS/
+- yum -y install openssl-devel pcre-devel bzip2-devel zlib-devel autoconf \
+                 automake libtool openldap-devel gamin-devel gdbm-devel \
+                 lua-devel GeoIP-devel mysql-devel
+- rpmbuild -ba lighttpd.spec
+  -- Should have:	lighttpd-1.4.39-3.el7.centos.armv7hl.rpm
+			lighttpd-debuginfo-1.4.39-3.el7.centos.armv7hl.rpm
+			lighttpd-fastcgi-1.4.39-3.el7.centos.armv7hl.rpm
+			lighttpd-mod_geoip-1.4.39-3.el7.centos.armv7hl.rpm
+			lighttpd-mod_mysql_vhost-1.4.39-3.el7.centos.armv7hl.rpm
+- rpmbuild -ba spawn-fcgi.spec
+  -- Should have:
+			spawn-fcgi-1.6.3-5.el7.centos.armv7hl.rpm
+			spawn-fcgi-debuginfo-1.6.3-5.el7.centos.armv7hl.rpm
+- Already installed at this point:
+  -- newt dnsmasq curl unzip wget findutils
+  -- cronie sudo (get updated) 
+- yum install iproute bc bind-utils git nmap-ncat php php-cli php-common
+- cd /root/rpmbuild/RPMS/armv7hl
+- yum install ./lighttpd-1.4.39-3.el7.centos.armv7hl.rpm \
+  lighttpd-fastcgi-1.4.39-3.el7.centos.armv7hl.rpm \
+  spawn-fcgi-1.6.3-5.el7.centos.armv7hl.rpm
+- Ran a yum update at this point, powered off, pulled the SD card and plugged it back into my Fedora desktop so I could copy an image of the root partition.
+- Started up the RPi again
+- curl -L https://install.pi-hole.net | bash
+- Full output at: http://termbin.com/3ek7
+
