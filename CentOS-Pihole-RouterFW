@@ -1,0 +1,3 @@
+Notes for CentOS-x86_64 install on a PER610.
+Goal:  Install pi-hole, set system up as a firewall.  All network traffic from cable modem 
+       comes in to the 610 and then routes out to the home network. 
