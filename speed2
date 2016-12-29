@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+#Server ID,Sponsor,Server Name,Timestamp,Distance,Ping,Download,Upload
+#8697,"Cable One, Inc.","Long Beach, MS",2016-12-29T11:40:06.862934,16.705806919827555,20.969,229076334.09849033,10617358.019503765
+
+use Text::CSV;
+use Math::Round;
+
+# $check = `speedtest-cli --csv`;
+$check = "8697,Cable One Inc.,Long Beach MS,2016-12-29T11:40:06.862934,16.705806919827555,20.969,229076334.09849033,10617358.019503765";
+# print "$check\n";
+
+my $csv = Text::CSV->new();
+
+$status = $csv->parse($check);
+@data = $csv->fields();
+
+$id = @data[0];
+$name = @data[1];
+$location = @data[2];
+$ts = @data[3];
+$distance = @data[4];
+
+$pingraw = @data[5];
+$ping = round($pingraw);
+
+$dlraw = @data[6];
+$dlraw = $dlraw/1048576;
+$dl = nearest(.01,$dlraw);
+
+$ulraw = @data[7];
+$ulraw = $ulraw/1048576;
+$ul = nearest(.01,$ulraw);
+
+print "P Cable_ping ping=$ping;100;1000 Ping time ${ping}ms\n";
+print "P Cable_down download=$dl;190;150 Download speed ${dl}Mb/s\n";
+print "P Cable_up upload=$ul;8;5 Upload speed ${ul}Mb/s\n";
+
