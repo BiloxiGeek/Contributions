@@ -1,0 +1,68 @@
+#!/usr/bin/perl
+# Process output from speedtest-cli into check_mk services
+#
+# This version determines state of each service
+#
+# Example output from speedtest-cli:
+#Server ID,Sponsor,Server Name,Timestamp,Distance,Ping,Download,Upload
+#8697,"Cable One, Inc.","Long Beach, MS",2016-12-29T11:40:06.862934,16.705806919827555,20.969,229076334.09849033,10617358.019503765
+
+use Text::CSV;
+use Math::Round;
+
+$check = `speedtest-cli --csv`;
+# $check = "8697,Cable One Inc.,Long Beach MS,2016-12-29T11:40:06.862934,16.705806919827555,20.969,229076334.09849033,10617358.019503765";
+# print "$check\n";
+
+my $csv = Text::CSV->new();
+
+$status = $csv->parse($check);
+@data = $csv->fields();
+
+$id = @data[0];
+$name = @data[1];
+$location = @data[2];
+$ts = @data[3];
+$distance = @data[4];
+$pingraw = @data[5];
+$dlraw = @data[6];
+$ulraw = @data[7];
+$ping = round($pingraw);
+$dl = round($dlraw);
+$ul = round($ulraw);
+
+if ($ping > 1000) {
+	print "2 Cable_ping ping=$ping;100;1000 Critical: Ping time above 1s\n";
+} elsif ($ping > 100) {
+	print "1 Cable_ping ping=$ping;100;1000 Warning: Ping time above 100ms\n";
+} elsif (($ping < 100) && ($ping > 0)) {
+	print "0 Cable_ping ping=$ping;100;1000 OK: ping time is $ping ms\n";
+} else {
+	print "3 Cable_ping ping=$ping;100;1000 UNKNOWN: bad ping time received\n";
+};
+
+if ($dl < 150000000) {
+	print "2 Cable_down download=$dl Critical: Download speed below 150Mb/s\n";
+} elsif (($dl > 150000000) && ($dl < 190000000)) {
+	print "1 Cable_down download=$dl Warning: Download speed below 190Mb/s\n";
+} elsif ($dl > 190000000) {
+	$dlmraw = $dl/1048576;
+	$dlm = round($dlmraw);
+	print "0 Cable_down download=$dl OK: Download speed $dlm Mb/s\n";
+} else {
+	print "3 Cable_down download=$dl UNKNOWN: bad download speed data\n";
+}
+
+if ($ul < 5000000) {
+	print "2 Cable_up upload=$ul Critical: Upload speed below 5Mb/s\n";
+} elsif (($ul > 5000000) && ($ul < 9000000)) {
+	print "1 Cable_up upload=$ul Warning: Upload speed below 9Mb/s\n";
+} elsif ($ul > 9000000) {
+	$ulmraw = $ul/1048576;
+	$ulm = round($ulmraw);
+	print "0 Cable_up upload=$ul OK: Upload speed $ulm Mb/s\n";
+} else {
+	print "3 Cable_up upload=$ul UNKNOWN: bad upload speed data\n";
+}
+
+
