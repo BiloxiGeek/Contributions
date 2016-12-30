@@ -35,8 +35,10 @@ $ul = @data[7];
 # Changed speedtest.py to use local time instead of UTC and ISO format
 ($ts,undef) = split(/\./,$ts);
 
-# Distance in kilometers, rounded to tenths 
+# Distance in kilometers, converted to miles, rounded to tenths 
+$distance = $distance*0.621371;
 $distance = nearest(.1,$distance);
+
 
 # Ping time, rounded to hundreths
 $ping = nearest(.01,$ping);
@@ -52,7 +54,7 @@ $ul = nearest(.01,$ul);
 # Output for check_mk. Note the warning and critical levels for upload and download,
 # and that they have ranges expressed.
 # That lets you set an inverted logic, ie: Higher numbers are better.
-print "P Cable_ping ping=$ping;100;1000 Ping time to ${id}:${name}/${location} (${distance} km) ${ping}ms at ${ts}\n";
+print "P Cable_ping ping=$ping;100;1000 Ping time to ${id}:${name}/${location} (${distance} miles) ${ping}ms at ${ts}\n";
 print "P Cable_down download=$dl;190:9999;150:9999 Download speed ${dl}Mb/s \n";
 print "P Cable_up upload=$ul;8:999;5:999 Upload speed ${ul}Mb/s\n";
 
