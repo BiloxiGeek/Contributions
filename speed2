@@ -1,7 +1,8 @@
 #!/usr/bin/perl
 #
 # Use speedtest-cli to get connection speeds through the cable modem.
-#
+# I did modify my copy of speedtest.py to adjust the timestamp to my preference, I wanted to see
+# local time, the normal behavior is UTC
 
 use Text::CSV;
 use Math::Round;
@@ -14,7 +15,7 @@ $check = `speedtest-cli --csv`;
 ### id,name,location,timestamp,distance,pingtime,download,upload
 ###                             ^ km ^   ^ ms ^  ^^^^ bit/s ^^^^
 
-# $check = "8697,Cable One Inc.,Long Beach MS,2016-12-29T11:40:06.862934,16.705806919827555,20.969,229076334.09849033,10617358.019503765";
+# $check = "8697,Cable One Inc.,Long Beach MS,2016-12-30 08:03:04.456540,16.705806919827555,21.13,228414530.96216443,10572649.927749336"
 
 my $csv = Text::CSV->new();
 
