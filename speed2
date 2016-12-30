@@ -1,38 +1,57 @@
 #!/usr/bin/perl
-
-#Server ID,Sponsor,Server Name,Timestamp,Distance,Ping,Download,Upload
-#8697,"Cable One, Inc.","Long Beach, MS",2016-12-29T11:40:06.862934,16.705806919827555,20.969,229076334.09849033,10617358.019503765
+#
+# Use speedtest-cli to get connection speeds through the cable modem.
+#
 
 use Text::CSV;
 use Math::Round;
 
-# $check = `speedtest-cli --csv`;
-$check = "8697,Cable One Inc.,Long Beach MS,2016-12-29T11:40:06.862934,16.705806919827555,20.969,229076334.09849033,10617358.019503765";
-# print "$check\n";
+# Get csv formatted data.
+$check = `speedtest-cli --csv`;
+
+### If testing: comment out the command above, uncomment the line below for faked data to keep from using bandwidth.
+### Fake data format...
+### id,name,location,timestamp,distance,pingtime,download,upload
+###                             ^ km ^   ^ ms ^  ^^^^ bit/s ^^^^
+
+# $check = "8697,Cable One Inc.,Long Beach MS,2016-12-29T11:40:06.862934,16.705806919827555,20.969,229076334.09849033,10617358.019503765";
 
 my $csv = Text::CSV->new();
 
 $status = $csv->parse($check);
 @data = $csv->fields();
 
+# The other fields that speedtest returns.... 
+# Can't think of what the location, timestamp or distance might be used for
+# unless speedtest-cli starts randomly using different servers to test.
+# Use id and name to make pretty check output.
 $id = @data[0];
 $name = @data[1];
 $location = @data[2];
-$ts = @data[3];
+# $ts = @data[3];
 $distance = @data[4];
+$ping = @data[5];
+$dl = @data[6];
+$ul = @data[7];
 
-$pingraw = @data[5];
-$ping = round($pingraw);
+# Distance in kilometers, rounded to tenths 
+$distance = nearest(.1,$distance);
 
-$dlraw = @data[6];
-$dlraw = $dlraw/1048576;
-$dl = nearest(.01,$dlraw);
+# Ping time, rounded to hundreths
+$ping = nearest(.01,$ping);
 
-$ulraw = @data[7];
-$ulraw = $ulraw/1048576;
-$ul = nearest(.01,$ulraw);
+# Download speed expressed in Mb/s and then rounded to hundreths
+$dl = $dl/1048576;
+$dl = nearest(.01,$dl);
 
-print "P Cable_ping ping=$ping;100;1000 Ping time ${ping}ms\n";
-print "P Cable_down download=$dl;190;150 Download speed ${dl}Mb/s\n";
-print "P Cable_up upload=$ul;8;5 Upload speed ${ul}Mb/s\n";
+# Upoad speed expressed in Mb/s and then rounded to hundreths
+$ul = $ul/1048576;
+$ul = nearest(.01,$ul);
+
+# Output for check_mk. Note the warning and critical levels for upload and download,
+# and that they have ranges expressed.
+# That lets you set an inverted logic, ie: Higher numbers are better.
+print "P Cable_ping ping=$ping;100;1000 Ping time to ${id}:${name}/${location} (${distance} km) ${ping}ms\n";
+print "P Cable_down download=$dl;190:9999;150:9999 Download speed ${dl}Mb/s \n";
+print "P Cable_up upload=$ul;8:999;5:999 Upload speed ${ul}Mb/s\n";
 
