@@ -25,11 +25,14 @@ $status = $csv->parse($check);
 $id = @data[0];
 $name = @data[1];
 $location = @data[2];
-# $ts = @data[3];
+$ts = @data[3];
 $distance = @data[4];
 $ping = @data[5];
 $dl = @data[6];
 $ul = @data[7];
+
+# Changed speedtest.py to use local time instead of UTC and ISO format
+($ts,undef) = split(/\./,$ts);
 
 # Distance in kilometers, rounded to tenths 
 $distance = nearest(.1,$distance);
@@ -48,7 +51,7 @@ $ul = nearest(.01,$ul);
 # Output for check_mk. Note the warning and critical levels for upload and download,
 # and that they have ranges expressed.
 # That lets you set an inverted logic, ie: Higher numbers are better.
-print "P Cable_ping ping=$ping;100;1000 Ping time to ${id}:${name}/${location} (${distance} km) ${ping}ms\n";
+print "P Cable_ping ping=$ping;100;1000 Ping time to ${id}:${name}/${location} (${distance} km) ${ping}ms at ${ts}\n";
 print "P Cable_down download=$dl;190:9999;150:9999 Download speed ${dl}Mb/s \n";
 print "P Cable_up upload=$ul;8:999;5:999 Upload speed ${ul}Mb/s\n";
 
