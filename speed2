@@ -1,8 +1,7 @@
 #!/usr/bin/perl
 #
 # Use speedtest-cli to get connection speeds through the cable modem.
-# I did modify my copy of speedtest.py to adjust the timestamp to my preference, I wanted to see
-# local time, the normal behavior is UTC
+#
 
 use Text::CSV;
 use Math::Round;
@@ -15,7 +14,7 @@ $check = `speedtest-cli --csv`;
 ### id,name,location,timestamp,distance,pingtime,download,upload
 ###                             ^ km ^   ^ ms ^  ^^^^ bit/s ^^^^
 
-# $check = "8697,Cable One Inc.,Long Beach MS,2016-12-30 08:03:04.456540,16.705806919827555,21.13,228414530.96216443,10572649.927749336"
+# $check = "8697,Cable One Inc.,Long Beach MS,2016-12-29T11:40:06.862934,16.705806919827555,20.969,229076334.09849033,10617358.019503765";
 
 my $csv = Text::CSV->new();
 
@@ -35,10 +34,15 @@ $ul = @data[7];
 # Changed speedtest.py to use local time instead of UTC and ISO format
 ($ts,undef) = split(/\./,$ts);
 
+# Log results for later analysis
+$logfile = "/var/log/broadband.log";
+open (BBLOG, ">>$logfile");
+print BBLOG "$ts icedell $ping $dl $ul ${id}:${name}:${location}\n"; 
+close (BBLOG);
+
 # Distance in kilometers, converted to miles, rounded to tenths 
 $distance = $distance*0.621371;
 $distance = nearest(.1,$distance);
-
 
 # Ping time, rounded to hundreths
 $ping = nearest(.01,$ping);
@@ -47,7 +51,7 @@ $ping = nearest(.01,$ping);
 $dl = $dl/1048576;
 $dl = nearest(.01,$dl);
 
-# Upoad speed expressed in Mb/s and then rounded to hundreths
+# Upload speed expressed in Mb/s and then rounded to hundreths
 $ul = $ul/1048576;
 $ul = nearest(.01,$ul);
 
