@@ -1,0 +1,47 @@
+#!/bin/sh
+# Copyright (C) 2019 Checkmk GmbH - License: GNU General Public License v2
+# This file is part of Checkmk (https://checkmk.com). It is subject to the terms and
+# conditions defined in the file COPYING, which is part of this source code package.
+
+# Reason for this no-op: shellcheck disable=... before the first command disables the error for the
+# entire script.
+:
+
+# Disable unused variable error (needed to keep track of version)
+# shellcheck disable=SC2034
+CMK_VERSION="2.4.0b1"
+
+# This check can be used to test the name resolution of a given host
+# address using the local resolver of the system this script is
+# running on.
+
+HOSTADDRESSES=mathias-kettner.de
+HOSTADDRESSES6=mathias-kettner.de
+
+# shellcheck source=agents/cfg_examples/dnsclient.cfg
+. "/etc/check_mk/dnsclient.cfg" #  2>/dev/null
+
+echo "<<<mrpe>>>"
+for HOSTADDRESS in $HOSTADDRESSES; do
+    ADDRESSES=$(dig +short +noall +answer "$HOSTADDRESS" A)
+    if [ ! "$ADDRESSES" ]; then
+        STATE=2
+        OUTPUT="CRIT - $HOSTADDRESS could not be resolved"
+    else
+        STATE=0
+        OUTPUT="OK - $HOSTADDRESS resolved into $ADDRESSES"
+    fi
+    echo "Resolve_$HOSTADDRESS $STATE $OUTPUT"
+done
+
+for HOSTADDRESS6 in $HOSTADDRESSES6; do
+    ADDRESSES=$(dig +short +noall +answer "$HOSTADDRESS6" AAAA)
+    if [ ! "$ADDRESSES" ]; then
+        STATE=2
+        OUTPUT="CRIT - $HOSTADDRESS could not be resolved"
+    else
+        STATE=0
+        OUTPUT="OK - $HOSTADDRESS6 resolved into $ADDRESSES"
+    fi
+    echo "Resolve_$HOSTADDRESS6 $STATE $OUTPUT"
+done
